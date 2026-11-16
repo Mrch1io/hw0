@@ -20,7 +20,7 @@ def add(x, y):
         Sum of x + y
     """
     ### BEGIN YOUR CODE
-    pass
+    return x + y
     ### END YOUR CODE
 
 
@@ -48,7 +48,14 @@ def parse_mnist(image_filename, label_filename):
                 for MNIST will contain the values 0-9.
     """
     ### BEGIN YOUR CODE
-    pass
+    with gzip.open(image_filename, "rb") as f:
+        magic, num_images, rows, cols = struct.unpack(">IIII", f.read(16))
+        X = np.frombuffer(f.read(), dtype=np.uint8).reshape(num_images, rows * cols)
+    with gzip.open(label_filename, "rb") as f:
+        magic, num_labels = struct.unpack(">II", f.read(8))
+        y = np.frombuffer(f.read(), dtype=np.uint8)
+    X = X.astype(np.float32) / 255.0
+    return X, y
     ### END YOUR CODE
 
 
@@ -68,7 +75,7 @@ def softmax_loss(Z, y):
         Average softmax loss over the sample.
     """
     ### BEGIN YOUR CODE
-    pass
+    return np.mean(np.log(np.sum(np.exp(Z), axis=1)) - Z[np.arange(len(y)), y])
     ### END YOUR CODE
 
 
@@ -91,7 +98,15 @@ def softmax_regression_epoch(X, y, theta, lr = 0.1, batch=100):
         None
     """
     ### BEGIN YOUR CODE
-    pass
+    for i in range(0, X.shape[0], batch):
+        X_batch = X[i:i + batch]
+        y_batch = y[i:i + batch]
+        Z = np.exp(X_batch @ theta)
+        Z = Z / np.sum(Z, axis=1, keepdims=True)
+        I_y = np.zeros((batch, theta.shape[1]))
+        I_y[np.arange(batch), y_batch] = 1
+        grad = X_batch.T @ (Z - I_y) / batch
+        theta -= lr * grad
     ### END YOUR CODE
 
 
@@ -118,7 +133,20 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
         None
     """
     ### BEGIN YOUR CODE
-    pass
+    for i in range(0, X.shape[0], batch):
+        X_batch = X[i:i + batch]
+        y_batch = y[i:i + batch]
+        Z1 = np.maximum(X_batch @ W1, 0)
+        G2 = np.exp(Z1 @ W2)
+        G2 = G2 / np.sum(G2, axis=1, keepdims=True)
+        I_y = np.zeros((batch, W2.shape[1]))
+        I_y[np.arange(batch), y_batch] = 1
+        G2 = G2 - I_y
+        G1 = (Z1 > 0) * (G2 @ W2.T)
+        grad_W1 = X_batch.T @ G1 / batch
+        grad_W2 = Z1.T @ G2 / batch
+        W1 -= lr * grad_W1
+        W2 -= lr * grad_W2
     ### END YOUR CODE
 
 
